@@ -55,40 +55,92 @@ for row2 in range(len(csv7)):
 csv8=csv7[csv7.consec_NaN2<5]
 csv8.tail(20)
 
-#box plot of data for non leap years:
-csv_year=csv3[csv3.year%4!=0]
-n=len(pd.unique(csv_year['year']))
-row2=0
-csv_year2=pd.DataFrame({'T_mm':csv3.iloc[0:366,2]})
+# conversion of single time series to multiple time series based on the year
+csv_annual=csv3.groupby('year')
+m=pd.unique(csv3['year'])
+n=len(m)
+csv_year2=pd.DataFrame({'Sno':range(366)})
 for row in range(n):
-    csv_year4=csv3.iloc[row2:row2+366,2]
-    row2=row2+366   
-    csv_year4.index=(csv3.iloc[0:366,2].index)
-    csv_year2.insert(row+1,'Tmm',csv_year4,True)
-    print(row2)
-csv_year2.tail(20)
-plt.boxplot(csv_year2.iloc[1:n])
+    year = m[row]
+    csv_year44=csv_annual.get_group(year) 
+    csv_year4=csv_year44['Tmax_new']
+    #csv_year4.head()
+    if(year%4!=0):
+        csv_year4.index=(csv3.iloc[0:365,2].index)
+    else:
+        csv_year4.index=(csv3.iloc[0:366,2].index)
+    csv_year2.insert(row,m[row],csv_year4,True)
+csv_year2.tail()
 
-#box plot for leap years:
-csv_year=csv3[csv3.year%4==0]
-n=len(pd.unique(csv_year['year']))
-row2=0
-csv_year2=pd.DataFrame({'T_mm':csv3.iloc[0:366,2]})
-for row in range(n):
-    csv_year4=csv3.iloc[row2:row2+366,2]
-    row2=row2+366   
-    csv_year4.index=(csv3.iloc[0:366,2].index)
-    csv_year2.insert(row+1,'Tmm',csv_year4,True)
-    print(row2)
-csv_year2.tail(20)
-plt.boxplot(csv_year2.iloc[1:n])
+#box plot of data 
+csv_year2.iloc[:,0:21].boxplot(rot=45,figsize=(9,9))
+plt.xlabel("Year")
+plt.ylabel("Temperature")
+plt.show()
+
+#line plot
+plt.plot(csv_year2.iloc[:,0:21])
+plt.xlabel("Year")
+plt.ylabel("Temperature")
+plt.show()
 
 #distribution of data
+import warnings
+import seaborn as sns
+warnings.filterwarnings('ignore')
+plt.figure(figsize=(16,5))
+plt.subplot(1,2,1)
+sns.distplot(csv_year2.iloc[:,4])
+plt.show()
 
+#Finding outliers using the quantiles
+sample=pd.DataFrame({'Tmax':csv_year2.iloc[0:366,1]})
+#sample2['Tmax']=csv_year2.iloc[:,1]
+#sample['Sno']=csv_year2.iloc[:,21]
+per25 = sample['Tmax'].quantile(0.25)
+per75 = sample['Tmax'].quantile(0.75)
+#print(per25)
+#Finding upper and lower limit
+iqr=per75-per25
+UL = per75 + 1.5 * iqr
+LL = per25 - 1.5 * iqr
+#Removing Outliers
+df1=sample[sample.Tmax<UL]
+df2=sample[sample.iloc[:,0]>LL]
+plt.figure(figsize=(16,8))
+plt.subplot(2,2,1)
+sns.distplot(csv_year2.iloc[0:366,1])
+plt.subplot(2,2,2)
+sns.boxplot(csv_year2.iloc[0:366,1])
+plt.subplot(2,2,3)
+sns.distplot(df1['Tmax'])
+plt.subplot(2,2,4)
+sns.boxplot(df1['Tmax'])
+plt.show()
+new_df_cap = sample.copy()
+new_df_cap['Tmax'] = np.where(
+    new_df_cap['Tmax'] > UL,
+    UL,
+    np.where(
+        new_df_cap['Tmax'] < LL,
+        LL,
+        new_df_cap['Tmax']
+    )
+)
+plt.figure(figsize=(16,8))
+plt.subplot(2,2,1)
+sns.distplot(sample['Tmax'])
+plt.subplot(2,2,2)
+sns.boxplot(sample['Tmax'])
+plt.subplot(2,2,3)
+sns.distplot(new_df_cap['Tmax'])
+plt.subplot(2,2,4)
+sns.boxplot(new_df_cap['Tmax'])
+plt.show()
+                           
 #replace by most frequent value
 
-                             
-                             
+
 #replace by mean value
 
                              
